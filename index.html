@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Chess Game</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="panel">
+        <h1>Chess</h1>
+        <p id="status" class="status">White to move</p>
+        <div class="buttons">
+          <button id="new-game" type="button">New Game</button>
+          <button id="flip-board" type="button">Flip Board</button>
+        </div>
+        <div class="legend">
+          <p>Click a piece to see legal moves.</p>
+          <p>Green: move, Red: capture.</p>
+        </div>
+      </section>
+      <section class="board-wrap">
+        <div id="board" class="board" aria-label="Chess board"></div>
+      </section>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
