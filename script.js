@@ -60,6 +60,7 @@ const initialState = () => ({
 
 let state = initialState();
 let computerJobId = 0;
+let computerTimer = null;
 
 function inBounds(r, c) {
   return r >= 0 && r < 8 && c >= 0 && c < 8;
@@ -527,9 +528,11 @@ function render() {
 
       const piece = state.board[r][c];
       if (piece) {
+        sq.classList.add("has-piece");
         const pieceEl = document.createElement("span");
         pieceEl.className = `piece ${piece[0] === "w" ? "white" : "black"}`;
         pieceEl.textContent = PIECE_UNICODE[piece];
+        pieceEl.dataset.glyph = PIECE_UNICODE[piece];
         sq.appendChild(pieceEl);
       }
 
@@ -609,14 +612,23 @@ function chooseComputerMove(game) {
   return bestMoves[Math.floor(Math.random() * bestMoves.length)];
 }
 
+function stopComputerTimer() {
+  if (computerTimer !== null) {
+    window.clearTimeout(computerTimer);
+    computerTimer = null;
+  }
+}
+
 function maybeTriggerComputerMove() {
+  stopComputerTimer();
   if (!isComputerTurn(state) || state.aiThinking) return;
 
   const jobId = ++computerJobId;
   state.aiThinking = true;
   render();
 
-  window.setTimeout(() => {
+  computerTimer = window.setTimeout(() => {
+    computerTimer = null;
     if (jobId !== computerJobId) return;
 
     const move = chooseComputerMove(state);
@@ -629,7 +641,7 @@ function maybeTriggerComputerMove() {
     }
 
     render();
-  }, 350);
+  }, 420);
 }
 
 function onSquareClick(e) {
@@ -665,6 +677,7 @@ newGameBtn.addEventListener("click", () => {
   const orientation = state.orientation;
   const mode = state.mode;
   computerJobId += 1;
+  stopComputerTimer();
   state = initialState();
   state.orientation = orientation;
   state.mode = mode;
@@ -681,6 +694,7 @@ flipBoardBtn.addEventListener("click", () => {
 gameModeSelect.addEventListener("change", () => {
   state.mode = gameModeSelect.value === "computer" ? "computer" : "p2p";
   computerJobId += 1;
+  stopComputerTimer();
   state.aiThinking = false;
   clearSelection();
   render();

@@ -109,7 +109,7 @@ button:hover {
   width: 100%;
   display: grid;
   place-items: center;
-  perspective: 1200px;
+  perspective: 1800px;
 }
 
 .board {
@@ -124,15 +124,25 @@ button:hover {
   border-radius: 12px;
   overflow: hidden;
   box-shadow:
-    0 26px 40px rgba(32, 18, 10, 0.32),
-    0 8px 0 #5a351a;
-  transform: rotateX(13deg);
+    0 30px 55px rgba(32, 18, 10, 0.36),
+    0 12px 0 #5a351a;
+  transform: rotateX(24deg) rotateZ(-1deg);
   transform-style: preserve-3d;
   transition: transform 180ms ease;
+  position: relative;
+}
+
+.board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.26), transparent 34%);
+  z-index: 3;
 }
 
 .board:hover {
-  transform: rotateX(11deg);
+  transform: rotateX(20deg) rotateZ(-1deg);
 }
 
 .board.thinking {
@@ -148,18 +158,23 @@ button:hover {
   border: 0;
   padding: 0;
   cursor: pointer;
+  transform: translateZ(2px);
 }
 
 .square.light {
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--light) 84%, #fff), var(--light));
-  box-shadow: inset 0 0 0 1px rgba(255, 244, 218, 0.35);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 244, 218, 0.45),
+    inset 0 -2px 0 rgba(103, 74, 45, 0.12);
 }
 
 .square.dark {
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--dark) 86%, #dfc19f), var(--dark));
-  box-shadow: inset 0 0 0 1px rgba(66, 38, 16, 0.14);
+  box-shadow:
+    inset 0 2px 0 rgba(212, 173, 135, 0.16),
+    inset 0 -2px 0 rgba(66, 38, 16, 0.2);
 }
 
 .square:hover {
@@ -189,11 +204,34 @@ button:hover {
 }
 
 .piece {
-  transform: translateY(-2px);
+  transform: translateY(-7px) translateZ(12px);
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.34),
-    0 5px 8px rgba(0, 0, 0, 0.38);
+    0 9px 10px rgba(0, 0, 0, 0.45);
   line-height: 1;
+  position: relative;
+  display: inline-block;
+}
+
+.piece::before {
+  content: attr(data-glyph);
+  position: absolute;
+  left: 0;
+  top: 4px;
+  z-index: -1;
+  opacity: 0.8;
+  filter: blur(0.2px);
+}
+
+.square.has-piece::before {
+  content: "";
+  position: absolute;
+  width: 56%;
+  height: 18%;
+  bottom: 14%;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.34), transparent 75%);
+  pointer-events: none;
 }
 
 .piece.white {
@@ -202,6 +240,14 @@ button:hover {
 
 .piece.black {
   color: #211812;
+}
+
+.piece.white::before {
+  color: #d8ccb5;
+}
+
+.piece.black::before {
+  color: #090705;
 }
 
 .square.in-check {
@@ -231,7 +277,7 @@ button:hover {
   }
 
   .board {
-    transform: none;
-    box-shadow: 0 14px 24px rgba(32, 18, 10, 0.26);
+    transform: rotateX(10deg);
+    box-shadow: 0 18px 28px rgba(32, 18, 10, 0.28);
   }
 }
