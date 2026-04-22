@@ -17,6 +17,9 @@ After enabling GitHub Pages for this repository, your game will be available at:
 - Automatic pawn promotion to queen
 - Board flip button
 - New game reset
+- Game mode switch: `P2P` or `Vs Computer`
+- Lightweight built-in computer opponent (plays Black)
+- Enhanced 3D-style board and piece presentation
 - Responsive layout for desktop and mobile
 
 ## Tech Stack
@@ -65,7 +68,7 @@ Your app URL will be:
 ## Notes
 - This project focuses on core chess gameplay in the browser.
 - Current pawn promotion is auto-promote to queen only.
-- No multiplayer or AI opponent yet.
+- `Vs Computer` mode currently controls Black; White is player-controlled.
 
 ## License
 No license file is included yet. If you want, we can add an MIT license next.

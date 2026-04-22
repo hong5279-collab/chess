@@ -17,8 +17,18 @@ const boardEl = document.getElementById("board");
 const statusEl = document.getElementById("status");
 const newGameBtn = document.getElementById("new-game");
 const flipBoardBtn = document.getElementById("flip-board");
+const gameModeSelect = document.getElementById("game-mode");
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const COMPUTER_COLOR = "b";
+const PIECE_VALUES = {
+  p: 1,
+  n: 3,
+  b: 3,
+  r: 5,
+  q: 9,
+  k: 200,
+};
 
 const initialState = () => ({
   board: [
@@ -35,6 +45,8 @@ const initialState = () => ({
   selected: null,
   legalTargets: [],
   orientation: "w",
+  mode: "p2p",
+  aiThinking: false,
   gameOver: false,
   result: null,
   enPassant: null,
@@ -47,6 +59,7 @@ const initialState = () => ({
 });
 
 let state = initialState();
+let computerJobId = 0;
 
 function inBounds(r, c) {
   return r >= 0 && r < 8 && c >= 0 && c < 8;
@@ -432,6 +445,9 @@ function allLegalMoves(game, color) {
 }
 
 function statusText(game) {
+  if (game.aiThinking && isComputerTurn(game)) {
+    return "Black (Computer) is thinking...";
+  }
   if (game.gameOver) return game.result;
   const side = game.turn === "w" ? "White" : "Black";
   if (inCheck(game.board, game.turn)) {
@@ -486,6 +502,7 @@ function isCaptureTarget(r, c) {
 
 function render() {
   boardEl.innerHTML = "";
+  boardEl.classList.toggle("thinking", state.aiThinking);
 
   const { rows, cols } = orientedCoords();
   const checkedKing = inCheck(state.board, state.turn) ? locateKing(state.board, state.turn) : null;
@@ -509,7 +526,12 @@ function render() {
       }
 
       const piece = state.board[r][c];
-      sq.textContent = piece ? PIECE_UNICODE[piece] : "";
+      if (piece) {
+        const pieceEl = document.createElement("span");
+        pieceEl.className = `piece ${piece[0] === "w" ? "white" : "black"}`;
+        pieceEl.textContent = PIECE_UNICODE[piece];
+        sq.appendChild(pieceEl);
+      }
 
       if ((r === 7 && state.orientation === "w") || (r === 0 && state.orientation === "b")) {
         const coord = document.createElement("span");
@@ -531,8 +553,87 @@ function clearSelection() {
   state.legalTargets = [];
 }
 
+function isComputerTurn(game) {
+  return game.mode === "computer" && game.turn === COMPUTER_COLOR && !game.gameOver;
+}
+
+function pieceValue(piece) {
+  if (!piece) return 0;
+  return PIECE_VALUES[piece[1]] ?? 0;
+}
+
+function boardScoreForComputer(board) {
+  let score = 0;
+  for (let r = 0; r < 8; r += 1) {
+    for (let c = 0; c < 8; c += 1) {
+      const piece = board[r][c];
+      if (!piece) continue;
+      const value = pieceValue(piece);
+      score += piece[0] === COMPUTER_COLOR ? value : -value;
+    }
+  }
+  return score;
+}
+
+function scoreMove(game, move) {
+  const movingPiece = game.board[move.from.r][move.from.c];
+  let capturedPiece = game.board[move.to.r][move.to.c];
+  if (move.special === "enPassant") {
+    const captureRow = movingPiece[0] === "w" ? move.to.r + 1 : move.to.r - 1;
+    capturedPiece = game.board[captureRow][move.to.c];
+  }
+
+  const next = applyMove(game, move);
+  const checkBonus = inCheck(next.board, next.turn) ? 0.35 : 0;
+  const captureBonus = capturedPiece ? pieceValue(capturedPiece) * 0.18 : 0;
+  return boardScoreForComputer(next.board) + checkBonus + captureBonus;
+}
+
+function chooseComputerMove(game) {
+  const moves = allLegalMoves(game, COMPUTER_COLOR);
+  if (!moves.length) return null;
+
+  let bestScore = -Infinity;
+  let bestMoves = [];
+
+  for (const move of moves) {
+    const score = scoreMove(game, move);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMoves = [move];
+    } else if (score === bestScore) {
+      bestMoves.push(move);
+    }
+  }
+
+  return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+}
+
+function maybeTriggerComputerMove() {
+  if (!isComputerTurn(state) || state.aiThinking) return;
+
+  const jobId = ++computerJobId;
+  state.aiThinking = true;
+  render();
+
+  window.setTimeout(() => {
+    if (jobId !== computerJobId) return;
+
+    const move = chooseComputerMove(state);
+    state.aiThinking = false;
+
+    if (move) {
+      state = applyMove(state, move);
+      clearSelection();
+      finalizeGameState(state);
+    }
+
+    render();
+  }, 350);
+}
+
 function onSquareClick(e) {
-  if (state.gameOver) return;
+  if (state.gameOver || state.aiThinking || isComputerTurn(state)) return;
 
   const r = Number(e.currentTarget.dataset.r);
   const c = Number(e.currentTarget.dataset.c);
@@ -545,6 +646,7 @@ function onSquareClick(e) {
       clearSelection();
       finalizeGameState(state);
       render();
+      maybeTriggerComputerMove();
       return;
     }
   }
@@ -561,9 +663,14 @@ function onSquareClick(e) {
 
 newGameBtn.addEventListener("click", () => {
   const orientation = state.orientation;
+  const mode = state.mode;
+  computerJobId += 1;
   state = initialState();
   state.orientation = orientation;
+  state.mode = mode;
+  gameModeSelect.value = mode;
   render();
+  maybeTriggerComputerMove();
 });
 
 flipBoardBtn.addEventListener("click", () => {
@@ -571,4 +678,14 @@ flipBoardBtn.addEventListener("click", () => {
   render();
 });
 
+gameModeSelect.addEventListener("change", () => {
+  state.mode = gameModeSelect.value === "computer" ? "computer" : "p2p";
+  computerJobId += 1;
+  state.aiThinking = false;
+  clearSelection();
+  render();
+  maybeTriggerComputerMove();
+});
+
+gameModeSelect.value = state.mode;
 render();
